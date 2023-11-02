@@ -17,4 +17,18 @@ namespace SolutionIntrospector
 
         // Add other methods and properties to expose from Solution
     }
+
+    public class ProjectWrapper
+    {
+        public Project ActualProject{ get; set; }
+
+        public ProjectWrapper() { }
+
+        public ProjectWrapper(Project project)
+        {
+            ActualProject = project;
+        }
+
+        // Add other methods and properties to expose from Solution
+    }
 }

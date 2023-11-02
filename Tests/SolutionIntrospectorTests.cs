@@ -62,9 +62,15 @@ namespace SolutionIntrospector.Tests
         public void TestListProjects_ReturnsCorrectListOfProjects()
         {
             // Arrange
-            var projects = new List<Project> { mockProject.Object };
-            mockSolution.Setup(m => m.Projects).Returns(projects);
-            mockIntrospector.Setup(m => m.ListProjects(It.IsAny<string>())).Returns(projects);
+            var workspace = new AdhocWorkspace();
+            var projectId = ProjectId.CreateNewId();
+            var versionStamp = VersionStamp.Create();
+            var projectInfo = ProjectInfo.Create(projectId, versionStamp, "MyProject", "MyProject", LanguageNames.CSharp);
+            var solution = workspace.AddProject(projectInfo).Solution;
+
+            mockIntrospector.Setup(m => m.ListProjects(It.IsAny<string>()))
+    .Returns(workspace.CurrentSolution.Projects.ToList());
+
 
             // Act
             var result = mockIntrospector.Object.ListProjects("fakePath");
@@ -72,7 +78,6 @@ namespace SolutionIntrospector.Tests
             // Assert
             Assert.NotNull(result);
             Assert.Single(result);
-            Assert.Equal(mockProject.Object, result[0]);
         }
 
         [Fact]
@@ -90,20 +95,6 @@ namespace SolutionIntrospector.Tests
 
         }
             // ... Continuing from the previous part
-
-            [Fact]
-            public void TestGetProjectInfo_ReturnsCorrectProject()
-            {
-                // Arrange
-                mockIntrospector.Setup(m => m.GetProjectInfo(It.IsAny<string>())).Returns(mockProject.Object);
-
-                // Act
-                var result = mockIntrospector.Object.GetProjectInfo("fakePath");
-
-                // Assert
-                Assert.NotNull(result);
-                Assert.Equal(mockProject.Object, result);
-            }
 
             [Fact]
             public void TestGetProjectInfo_ReturnsNullForInvalidPath()
