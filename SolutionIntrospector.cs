@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.MSBuild;
@@ -15,6 +16,28 @@ namespace SolutionIntrospector
         private readonly ConcurrentDictionary<string, Task<Solution>> solutionCache = new ConcurrentDictionary<string, Task<Solution>>();
         private readonly ConcurrentDictionary<string, Task<Project>> projectCache = new ConcurrentDictionary<string, Task<Project>>();
 
+        private static readonly Lazy<MSBuildWorkspace> LazyWorkspace = new Lazy<MSBuildWorkspace>(() =>
+        {
+            //AppContext.SetSwitch("Switch.Microsoft.Build.NoInprocNode", true);
+            //MSBuildLocator.RegisterMSBuildPath(@"C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin");
+
+            var visualStudioInstances = MSBuildLocator.QueryVisualStudioInstances();
+            foreach (var inst in visualStudioInstances)
+            {
+                Console.WriteLine(inst.Name);
+                Console.WriteLine(inst.MSBuildPath);
+            }
+            var instance = Microsoft.Build.Locator.MSBuildLocator.QueryVisualStudioInstances().First();
+            Microsoft.Build.Locator.MSBuildLocator.RegisterInstance(instance);
+
+
+            //MSBuildLocator.RegisterDefaults();
+            return MSBuildWorkspace.Create();
+        });
+
+        public static MSBuildWorkspace WorkspaceInstance => LazyWorkspace.Value;
+
+
         // Assuming Assembly loading can be done synchronously, otherwise you would need a similar async approach
         private readonly ConcurrentDictionary<string, Assembly> assemblyCache = new ConcurrentDictionary<string, Assembly>();
 
@@ -22,7 +45,7 @@ namespace SolutionIntrospector
         {
             return await solutionCache.GetOrAdd(solutionPath, async path =>
             {
-                var workspace = MSBuildWorkspace.Create();
+                var workspace = WorkspaceInstance;
                 return await workspace.OpenSolutionAsync(path);
             });
         }
@@ -37,7 +60,7 @@ namespace SolutionIntrospector
         {
             return await projectCache.GetOrAdd(projectPath, async path =>
             {
-                var workspace = MSBuildWorkspace.Create();
+                var workspace = WorkspaceInstance;
                 return await workspace.OpenProjectAsync(path);
             });
         }
