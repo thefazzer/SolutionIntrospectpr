@@ -2,104 +2,111 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Reflection;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.MSBuild;
 
 namespace SolutionIntrospector
 {
     public class SolutionIntrospector : ISolutionIntrospector
     {
-        private readonly ConcurrentDictionary<string, Solution> solutionCache = new ConcurrentDictionary<string, Solution>();
-        private readonly ConcurrentDictionary<string, Project> projectCache = new ConcurrentDictionary<string, Project>();
+        private readonly ConcurrentDictionary<string, Task<Solution>> solutionCache = new ConcurrentDictionary<string, Task<Solution>>();
+        private readonly ConcurrentDictionary<string, Task<Project>> projectCache = new ConcurrentDictionary<string, Task<Project>>();
+
+        // Assuming Assembly loading can be done synchronously, otherwise you would need a similar async approach
         private readonly ConcurrentDictionary<string, Assembly> assemblyCache = new ConcurrentDictionary<string, Assembly>();
 
-        public Solution GetSolutionInfo(string solutionPath)
+        public async Task<Solution> GetSolutionInfoAsync(string solutionPath)
         {
-            return solutionCache.GetOrAdd(solutionPath, path =>
+            return await solutionCache.GetOrAdd(solutionPath, async path =>
             {
                 var workspace = MSBuildWorkspace.Create();
-                return workspace.OpenSolutionAsync(path).Result;
+                return await workspace.OpenSolutionAsync(path);
             });
         }
 
-        public List<Project> ListProjects(string solutionPath)
+        public async Task<IEnumerable<Project>> ListProjectsAsync(string solutionPath)
         {
-            var solution = GetSolutionInfo(solutionPath);
+            var solution = await GetSolutionInfoAsync(solutionPath);
             return new List<Project>(solution.Projects);
         }
 
-        public Project GetProjectInfo(string projectPath)
+        public async Task<Project> GetProjectInfoAsync(string projectPath)
         {
-            return projectCache.GetOrAdd(projectPath, path =>
+            return await projectCache.GetOrAdd(projectPath, async path =>
             {
                 var workspace = MSBuildWorkspace.Create();
-                return workspace.OpenProjectAsync(path).Result;
+                return await workspace.OpenProjectAsync(path);
             });
         }
 
-        public List<Assembly> ListAssemblies(string projectPath)
+        public async Task<IEnumerable<Assembly>> ListAssembliesAsync(string projectPath)
         {
-            var project = GetProjectInfo(projectPath);
+            var project = await GetProjectInfoAsync(projectPath);
             var outputFilePath = project.OutputFilePath;
             var assembly = Assembly.LoadFrom(outputFilePath);
             return new List<Assembly> { assembly };
         }
 
-        public Assembly GetAssemblyInfo(string assemblyPath)
+        public async Task<Assembly> GetAssemblyInfoAsync(string assemblyPath)
         {
-            return assemblyCache.GetOrAdd(assemblyPath, path => Assembly.LoadFrom(path));
+            return await Task.Run(() => assemblyCache.GetOrAdd(assemblyPath, path => Assembly.LoadFrom(path)));
         }
 
-        public List<string> ListNamespaces(string assemblyPath)
+        public async Task<IEnumerable<string>> ListNamespacesAsync(string assemblyPath)
         {
-            var assembly = GetAssemblyInfo(assemblyPath);
-            var types = assembly.GetTypes();
-            var namespaces = new HashSet<string>(types.Select(t => t.Namespace));
-            return new List<string>(namespaces);
+            var assembly = await GetAssemblyInfoAsync(assemblyPath);
+            return await Task.Run(() =>
+            {
+                var types = assembly.GetTypes();
+                var namespaces = new HashSet<string>(types.Select(t => t.Namespace));
+                return new List<string>(namespaces);
+            });
         }
 
-        public List<Type> ListClasses(string namespaceName, string assemblyPath)
+        public async Task<IEnumerable<Type>> ListClassesAsync(string namespaceName, string assemblyPath)
         {
-            var assembly = GetAssemblyInfo(assemblyPath);
-            var types = assembly.GetTypes();
-            return types.Where(t => t.Namespace == namespaceName).ToList();
+            var assembly = await GetAssemblyInfoAsync(assemblyPath);
+            return await Task.Run(() =>
+                assembly.GetTypes().Where(t => t.Namespace == namespaceName).ToList()
+            );
         }
 
-        public Type GetClassInfo(string className, string namespaceName, string assemblyPath)
+        public async Task<Type> GetClassInfoAsync(string className, string namespaceName, string assemblyPath)
         {
-            var classes = ListClasses(namespaceName, assemblyPath);
+            var classes = await ListClassesAsync(namespaceName, assemblyPath);
             return classes.FirstOrDefault(t => t.Name == className);
         }
 
-        public List<MethodInfo> ListMethods(string className, string namespaceName, string assemblyPath)
+        public async Task<IEnumerable<MethodInfo>> ListMethodsAsync(string className, string namespaceName, string assemblyPath)
         {
-            var type = GetClassInfo(className, namespaceName, assemblyPath);
-            return new List<MethodInfo>(type.GetMethods());
+            var type = await GetClassInfoAsync(className, namespaceName, assemblyPath);
+            return await Task.Run(() => new List<MethodInfo>(type.GetMethods()));
         }
 
-        public List<MethodDeclarationSyntax> GetMethodSyntaxTree(string methodName, string className, string namespaceName, string assemblyPath)
-        {
-            var project = GetProjectInfo(assemblyPath); // Assuming project file path and assembly path are the same for simplicity
-            var compilation = project.GetCompilationAsync().Result;
-            var tree = compilation.SyntaxTrees.FirstOrDefault();
-            var root = tree.GetRoot();
-            var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(m => m.Identifier.ToString() == methodName).ToList();
-            return methods;
-        }
 
-        public List<FieldInfo> ListFields(string className, string namespaceName, string assemblyPath)
+        public async Task<IEnumerable<FieldInfo>> ListFieldsAsync(string className, string namespaceName, string assemblyPath)
         {
-            var type = GetClassInfo(className, namespaceName, assemblyPath);
+            var type = await GetClassInfoAsync(className, namespaceName, assemblyPath);
             return new List<FieldInfo>(type.GetFields());
         }
 
-        public FieldInfo GetFieldInfo(string fieldName, string className, string namespaceName, string assemblyPath)
+        public async Task<FieldInfo> GetFieldInfoAsync(string fieldName, string className, string namespaceName, string assemblyPath)
         {
-            var type = GetClassInfo(className, namespaceName, assemblyPath);
-            return type.GetField(fieldName);
+            var type = await GetClassInfoAsync(className, namespaceName, assemblyPath);
+            return await Task.Run(() => type.GetField(fieldName));
+        }
+
+        public async Task<IEnumerable<MethodDeclarationSyntax>> GetMethodSyntaxTreeAsync(string methodName, string className, string namespaceName, string assemblyPath)
+        {
+            var project = await GetProjectInfoAsync(assemblyPath); // Ensure projectPath is used here if different from assemblyPath
+            var compilation = await project.GetCompilationAsync();
+            var tree = compilation.SyntaxTrees.FirstOrDefault(); // You might want to ensure the correct syntax tree is selected
+            var root = tree.GetRoot();
+            var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(m => m.Identifier.Text == methodName).ToList();
+            return methods;
         }
     }
 }

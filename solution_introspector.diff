@@ -1,0 +1,58 @@
+--- SolutionIntrospector.cs
++++ Modified.cs
+@@ -24,7 +24,7 @@
+         private readonly ConcurrentDictionary<string, Assembly> assemblyCache = new ConcurrentDictionary<string, Assembly>();
+
+         public async Task<Solution> GetSolutionInfoAsync(string solutionPath)
+         {
+-            return await solutionCache.GetOrAdd(solutionPath, path => workspace.OpenSolutionAsync(path));
++            return await solutionCache.GetOrAdd(solutionPath, path => MSBuildWorkspace.Create().OpenSolutionAsync(path));
+         }
+
+         public async Task<List<Project>> ListProjectsAsync(string solutionPath)
+@@ -37,7 +37,7 @@
+         }
+
+         public async Task<Project> GetProjectInfoAsync(string projectPath)
+         {
+-            return await projectCache.GetOrAdd(projectPath, path => workspace.OpenProjectAsync(path));
++            return await projectCache.GetOrAdd(projectPath, path => MSBuildWorkspace.Create().OpenProjectAsync(path));
+         }
+
+         public async Task<List<Assembly>> ListAssembliesAsync(string projectPath)
+@@ -56,7 +56,7 @@
+         public Assembly GetAssemblyInfo(string assemblyPath)
+         {
+             return assemblyCache.GetOrAdd(assemblyPath, path => Assembly.LoadFrom(path));
+-        }
++        } // Consider making this method async to match the async pattern of other methods
+
+         public List<string> ListNamespaces(string assemblyPath)
+         {
+@@ -73,7 +73,7 @@
+         }
+
+         public Type GetClassInfo(string className, string namespaceName, string assemblyPath)
+         {
+-            var classes = ListClasses(namespaceName, assemblyPath);
++            var classes = ListClasses(namespaceName, assemblyPath).Result; // This call should be awaited
+             return classes.FirstOrDefault(t => t.Name == className);
+         }
+
+@@ -83,11 +83,14 @@
+             return new List<MethodInfo>(type.GetMethods());
+         }
+
+-        public List<MethodDeclarationSyntax>> GetMethodSyntaxTree(string methodName, string className, string namespaceName, string assemblyPath)
++        public async Task<List<MethodDeclarationSyntax>> GetMethodSyntaxTreeAsync(string methodName, string className, string namespaceName, string assemblyPath)
+         {
+-            var tree = compilation.GetSyntaxTreeAsync().Result;
++            var project = await GetProjectInfoAsync(assemblyPath); // Ensure projectPath is used here if different from assemblyPath
++            var compilation = await project.GetCompilationAsync();
++            var tree = compilation.SyntaxTrees.FirstOrDefault(); // You might want to ensure the correct syntax tree is selected
+             var root = tree.GetRoot();
+-            var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToList();
++            var methods = root.DescendantNodes()
++                .OfType<MethodDeclarationSyntax>().Where(m => m.Identifier.Text == methodName).ToList();
+             return methods;
+         }

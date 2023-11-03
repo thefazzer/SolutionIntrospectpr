@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Reflection;
@@ -8,17 +9,17 @@ namespace SolutionIntrospector
 {
     public interface ISolutionIntrospector
     {
-        Solution GetSolutionInfo(string solutionPath);
-        List<Project> ListProjects(string solutionPath);
-        Project GetProjectInfo(string projectPath);
-        List<Assembly> ListAssemblies(string projectPath);
-        Assembly GetAssemblyInfo(string assemblyPath);
-        List<string> ListNamespaces(string assemblyPath);
-        List<Type> ListClasses(string namespaceName, string assemblyPath);
-        Type GetClassInfo(string className, string namespaceName, string assemblyPath);
-        List<MethodInfo> ListMethods(string className, string namespaceName, string assemblyPath);
-        List<MethodDeclarationSyntax> GetMethodSyntaxTree(string methodName, string className, string namespaceName, string assemblyPath);
-        List<FieldInfo> ListFields(string className, string namespaceName, string assemblyPath);
-        FieldInfo GetFieldInfo(string fieldName, string className, string namespaceName, string assemblyPath);
+        Task<Solution> GetSolutionInfoAsync(string solutionPath);
+        Task<IEnumerable<Project>> ListProjectsAsync(string solutionPath);
+        Task<Project> GetProjectInfoAsync(string projectPath);
+        Task<IEnumerable<Assembly>> ListAssembliesAsync(string projectPath);
+        Task<Assembly> GetAssemblyInfoAsync(string assemblyPath);
+        Task<IEnumerable<string>> ListNamespacesAsync(string assemblyPath);
+        Task<IEnumerable<Type>> ListClassesAsync(string namespaceName, string assemblyPath);
+        Task<Type> GetClassInfoAsync(string className, string namespaceName, string assemblyPath);
+        Task<IEnumerable<MethodInfo>> ListMethodsAsync(string className, string namespaceName, string assemblyPath);
+        Task<IEnumerable<MethodDeclarationSyntax>> GetMethodSyntaxTreeAsync(string methodName, string className, string namespaceName, string assemblyPath);
+        Task<IEnumerable<FieldInfo>> ListFieldsAsync(string className, string namespaceName, string assemblyPath);
+        Task<FieldInfo> GetFieldInfoAsync(string fieldName, string className, string namespaceName, string assemblyPath);
     }
 }

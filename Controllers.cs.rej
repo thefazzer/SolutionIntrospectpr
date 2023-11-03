@@ -1,0 +1,160 @@
+--- Controllers.cs  Original
++++ Controllers.cs  Modified
+@@ -12,8 +12,8 @@
+ public class SolutionController : ControllerBase
+ {
+     private readonly ISolutionIntrospector _solutionIntrospector;
+ 
+-    public SolutionController(ISolutionIntrospector solutionIntrospector)
++    public SolutionController(ISolutionIntrospector solutionIntrospector)
+     {
+         _solutionIntrospector = solutionIntrospector;
+     }
+@@ -21,7 +21,7 @@
+     public ActionResult<SolutionDto> GetSolutionInfo(string solutionPath)
+     {
+         try
+         {
+-            var solutionInfo = _solutionIntrospector.GetSolutionInfo(solutionPath);
++            var solutionInfo = await _solutionIntrospector.GetSolutionInfoAsync(solutionPath);
+             var solutionDto = MapToSolutionDto(solutionInfo); // Assuming a mapper method is implemented.
+             return Ok(solutionDto);
+--- /dev/null
++++ /dev/null
+@@ -39,7 +39,7 @@
+     public ActionResult<List<ProjectDto>> ListProjects(string solutionPath)
+     {
+         try
+         {
+-            var projects = _solutionIntrospector.ListProjects(solutionPath);
++            var projects = await _solutionIntrospector.ListProjectsAsync(solutionPath);
+             var projectDtos = projects.Select(p => new ProjectDto
+             {
+--- /dev/null
++++ /dev/null
+@@ -58,7 +58,7 @@
+     public ActionResult<ProjectDto> GetProjectInfo(string projectPath)
+     {
+         try
+         {
+-            var projectInfo = _solutionIntrospector.GetProjectInfo(projectPath);
++            var projectInfo = await _solutionIntrospector.GetProjectInfoAsync(projectPath);
+             var projectDto = MapToProjectDto(projectInfo);
+             return Ok(projectDto);
+--- /dev/null
++++ /dev/null
+@@ -76,7 +76,7 @@
+     public ActionResult<List<AssemblyDto>> ListAssemblies(string projectPath)
+     {
+         try
+         {
+-            var assemblies = _solutionIntrospector.ListAssemblies(projectPath);
++            var assemblies = await _solutionIntrospector.ListAssembliesAsync(projectPath);
+             var assemblyDtos = assemblies.Select(a => new AssemblyDto
+             {
+--- /dev/null
++++ /dev/null
+@@ -95,7 +95,7 @@
+     public ActionResult<AssemblyDto> GetAssemblyInfo(string assemblyPath)
+     {
+         try
+         {
+-            var assemblyInfo = _solutionIntrospector.GetAssemblyInfo(assemblyPath);
++            var assemblyInfo = await _solutionIntrospector.GetAssemblyInfoAsync(assemblyPath);
+             var detailedAssemblyDto = MapToAssemblyDto(assemblyInfo);
+             return Ok(detailedAssemblyDto);
+--- /dev/null
++++ /dev/null
+@@ -113,7 +113,7 @@
+     public ActionResult<List<string>> ListNamespaces(string assemblyPath)
+     {
+         try
+         {
+-            var namespaces = _solutionIntrospector.ListNamespaces(assemblyPath);
++            var namespaces = await _solutionIntrospector.ListNamespacesAsync(assemblyPath);
+             return Ok(namespaces);
+         }
+@@ -131,7 +131,7 @@
+     public ActionResult<List<TypeDto>> ListClasses(string namespaceName, string assemblyPath)
+     {
+         try
+         {
+-            var classes = _solutionIntrospector.ListClasses(namespaceName, assemblyPath);
++            var classes = await _solutionIntrospector.ListClassesAsync(namespaceName, assemblyPath);
+             var classDtos = classes.Select(c => new TypeDto
+             {
+--- /dev/null
++++ /dev/null
+@@ -150,7 +150,7 @@
+     public ActionResult<TypeDto> GetClassInfo(string className, string namespaceName, string assemblyPath)
+     {
+         try
+         {
+-            var classInfo = _solutionIntrospector.GetClassInfo(className, namespaceName, assemblyPath);
++            var classInfo = await _solutionIntrospector.GetClassInfoAsync(className, namespaceName, assemblyPath);
+             var detailedTypeDto = MapToTypeDto(classInfo);
+             return Ok(detailedTypeDto);
+--- /dev/null
++++ /dev/null
+@@ -169,7 +169,7 @@
+     public ActionResult<List<MethodInfoDto>> ListMethods(string className, string namespaceName, string assemblyPath)
+     {
+         try
+         {
+-            var methods = _solutionIntrospector.ListMethods(className, namespaceName, assemblyPath);
++            var methods = await _solutionIntrospector.ListMethodsAsync(className, namespaceName, assemblyPath);
+             var methodDtos = methods.Select(m => new MethodInfoDto
+             {
+--- /dev/null
++++ /dev/null
+@@ -189,7 +189,7 @@
+     public ActionResult<MethodInfoDto> GetMethodInfo(string methodName, string className, string namespaceName, string assemblyPath)
+     {
+         try
+         {
+-            var methodInfo = _solutionIntrospector.GetMethodInfo(methodName, className, namespaceName, assemblyPath);
++            var methodInfo = await _solutionIntrospector.GetMethodInfoAsync(methodName, className, namespaceName, assemblyPath);
+             var detailedMethodInfoDto = MapToMethodInfoDto(methodInfo);
+             return Ok(detailedMethodInfoDto);
+--- /dev/null
++++ /dev/null
+@@ -207,7 +207,7 @@
+     public ActionResult<List<string>> ListProperties(string className, string namespaceName, string assemblyPath)
+     {
+         try
+         {
+-            var properties = _solutionIntrospector.ListProperties(className, namespaceName, assemblyPath);
++            var properties = await _solutionIntrospector.ListPropertiesAsync(className, namespaceName, assemblyPath);
+             return Ok(properties);
+         }
+@@ -225,7 +225,7 @@
+     public ActionResult<string> GetPropertyInfo(string propertyName, string className, string namespaceName, string assemblyPath)
+     {
+         try
+         {
+-            var propertyInfo = _solutionIntrospector.GetPropertyInfo(propertyName, className, namespaceName, assemblyPath);
++            var propertyInfo = await _solutionIntrospector.GetPropertyInfoAsync(propertyName, className, namespaceName, assemblyPath);
+             return Ok(propertyInfo);
+         }
+--- /dev/null
++++ /dev/null
+@@ -243,7 +243,7 @@
+     public ActionResult<List<string>> ListFields(string className, string namespaceName, string assemblyPath)
+     {
+         try
+         {
+-            var fields = _solutionIntrospector.ListFields(className, namespaceName, assemblyPath);
++            var fields = await _solutionIntrospector.ListFieldsAsync(className, namespaceName, assemblyPath);
+             return Ok(fields);
+         }
+--- /dev/null
++++ /dev/null
+@@ -261,7 +261,7 @@
+     public ActionResult<string> GetFieldInfo(string fieldName, string className, string namespaceName, string assemblyPath)
+     {
+         try
+         {
+-            var fieldInfo = _solutionIntrospector.GetFieldInfo(fieldName, className, namespaceName, assemblyPath);
++            var fieldInfo = await _solutionIntrospector.GetFieldInfoAsync(fieldName, className, namespaceName, assemblyPath);
+             return Ok(fieldInfo);
+         }

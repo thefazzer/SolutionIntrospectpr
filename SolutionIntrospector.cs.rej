@@ -1,0 +1,11 @@
+--- SolutionIntrospector.cs
++++ Modified.cs
+@@ -24,7 +24,7 @@
+         private readonly ConcurrentDictionary<string, Assembly> assemblyCache = new ConcurrentDictionary<string, Assembly>();
+ 
+         public async Task<Solution> GetSolutionInfoAsync(string solutionPath)
+         {
+-            return await solutionCache.GetOrAdd(solutionPath, path => workspace.OpenSolutionAsync(path));
++            return await solutionCache.GetOrAdd(solutionPath, path => MSBuildWorkspace.Create().OpenSolutionAsync(path));
+         }
+ 

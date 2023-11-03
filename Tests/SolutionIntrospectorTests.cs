@@ -25,7 +25,7 @@ namespace SolutionIntrospector.Tests
         }
 
         [Fact]
-        public void TestGetSolutionInfo_ReturnsCorrectSolution()
+        public async void TestGetSolutionInfo_ReturnsCorrectSolution()
         {
             // Arrange
             var workspace = new AdhocWorkspace();
@@ -34,10 +34,10 @@ namespace SolutionIntrospector.Tests
             var projectInfo = ProjectInfo.Create(projectId, versionStamp, "MyProject", "MyProject", LanguageNames.CSharp);
             var solution = workspace.AddProject(projectInfo).Solution;
 
-            mockIntrospector.Setup(m => m.GetSolutionInfo(It.IsAny<string>())).Returns(solution);
+            mockIntrospector.Setup(m => m.GetSolutionInfoAsync(It.IsAny<string>())).ReturnsAsync(solution);
 
             // Act
-            var result = mockIntrospector.Object.GetSolutionInfo("fakePath");
+            var result = await mockIntrospector.Object.GetSolutionInfoAsync("fakePath");
 
             // Assert
             Assert.NotNull(result);
@@ -46,20 +46,20 @@ namespace SolutionIntrospector.Tests
         }
 
         [Fact]
-        public void TestGetSolutionInfo_ReturnsNullForInvalidPath()
+        public async void TestGetSolutionInfoAsync_ReturnsNullForInvalidPath()
         {
             // Arrange
-            mockIntrospector.Setup(m => m.GetSolutionInfo(It.IsAny<string>())).Returns((Solution)null);
+            mockIntrospector.Setup(m => m.GetSolutionInfoAsync(It.IsAny<string>())).ReturnsAsync((Solution)null);
 
             // Act
-            var result = mockIntrospector.Object.GetSolutionInfo("invalidPath");
+            var result = await mockIntrospector.Object.GetSolutionInfoAsync("invalidPath");
 
             // Assert
             Assert.Null(result);
         }
 
         [Fact]
-        public void TestListProjects_ReturnsCorrectListOfProjects()
+        public async void TestListProjects_ReturnsCorrectListOfProjects()
         {
             // Arrange
             var workspace = new AdhocWorkspace();
@@ -68,12 +68,13 @@ namespace SolutionIntrospector.Tests
             var projectInfo = ProjectInfo.Create(projectId, versionStamp, "MyProject", "MyProject", LanguageNames.CSharp);
             var solution = workspace.AddProject(projectInfo).Solution;
 
-            mockIntrospector.Setup(m => m.ListProjects(It.IsAny<string>()))
-    .Returns(workspace.CurrentSolution.Projects.ToList());
+            mockIntrospector.Setup(m => m.ListProjectsAsync(It.IsAny<string>()))
+    .ReturnsAsync(workspace.CurrentSolution.Projects.ToList());
+
 
 
             // Act
-            var result = mockIntrospector.Object.ListProjects("fakePath");
+            var result = await mockIntrospector.Object.ListProjectsAsync("fakePath");
 
             // Assert
             Assert.NotNull(result);
@@ -81,13 +82,13 @@ namespace SolutionIntrospector.Tests
         }
 
         [Fact]
-        public void TestListProjects_ReturnsEmptyListForInvalidSolution()
+        public async void TestListProjects_ReturnsEmptyListForInvalidSolution()
         {
             // Arrange
-            mockIntrospector.Setup(m => m.ListProjects(It.IsAny<string>())).Returns(new List<Project>());
+            mockIntrospector.Setup(m => m.ListProjectsAsync(It.IsAny<string>())).ReturnsAsync(new List<Project>());
 
             // Act
-            var result = mockIntrospector.Object.ListProjects("invalidPath");
+            var result = await mockIntrospector.Object.ListProjectsAsync("invalidPath");
 
             // Assert
             Assert.NotNull(result);
@@ -97,42 +98,42 @@ namespace SolutionIntrospector.Tests
             // ... Continuing from the previous part
 
             [Fact]
-            public void TestGetProjectInfo_ReturnsNullForInvalidPath()
+            public async void TestGetProjectInfo_ReturnsNullForInvalidPath()
             {
                 // Arrange
-                mockIntrospector.Setup(m => m.GetProjectInfo(It.IsAny<string>())).Returns((Project)null);
+                mockIntrospector.Setup(m => m.GetProjectInfoAsync(It.IsAny<string>())).ReturnsAsync((Project)null);
 
                 // Act
-                var result = mockIntrospector.Object.GetProjectInfo("invalidPath");
+                var result = await mockIntrospector.Object.GetProjectInfoAsync("invalidPath");
 
                 // Assert
                 Assert.Null(result);
             }
 
             [Fact]
-            public void TestListAssemblies_ReturnsCorrectListOfAssemblies()
+            public async void TestListAssemblies_ReturnsCorrectListOfAssemblies()
             {
                 // Arrange
                 var assemblies = new List<Assembly> { mockAssembly.Object };
-                mockIntrospector.Setup(m => m.ListAssemblies(It.IsAny<string>())).Returns(assemblies);
+                mockIntrospector.Setup(m => m.ListAssembliesAsync(It.IsAny<string>())).ReturnsAsync(assemblies);
 
                 // Act
-                var result = mockIntrospector.Object.ListAssemblies("fakePath");
+                var result = await mockIntrospector.Object.ListAssembliesAsync("fakePath");
 
                 // Assert
                 Assert.NotNull(result);
                 Assert.Single(result);
-                Assert.Equal(mockAssembly.Object, result[0]);
+                Assert.Equal(mockAssembly.Object, result.ToList()[0]);
             }
 
             [Fact]
-            public void TestListAssemblies_ReturnsEmptyListForInvalidProject()
+            public async void TestListAssemblies_ReturnsEmptyListForInvalidProject()
             {
                 // Arrange
-                mockIntrospector.Setup(m => m.ListAssemblies(It.IsAny<string>())).Returns(new List<Assembly>());
+                mockIntrospector.Setup(m => m.ListAssembliesAsync(It.IsAny<string>())).ReturnsAsync(new List<Assembly>());
 
                 // Act
-                var result = mockIntrospector.Object.ListAssemblies("invalidPath");
+                var result = await mockIntrospector.Object.ListAssembliesAsync("invalidPath");
 
                 // Assert
                 Assert.NotNull(result);
@@ -140,13 +141,13 @@ namespace SolutionIntrospector.Tests
             }
 
             [Fact]
-            public void TestGetAssemblyInfo_ReturnsCorrectAssembly()
+            public async void TestGetAssemblyInfo_ReturnsCorrectAssembly()
             {
                 // Arrange
-                mockIntrospector.Setup(m => m.GetAssemblyInfo(It.IsAny<string>())).Returns(mockAssembly.Object);
+                mockIntrospector.Setup(m => m.GetAssemblyInfoAsync(It.IsAny<string>())).ReturnsAsync(mockAssembly.Object);
 
                 // Act
-                var result = mockIntrospector.Object.GetAssemblyInfo("fakePath");
+                var result = await mockIntrospector.Object.GetAssemblyInfoAsync("fakePath");
 
                 // Assert
                 Assert.NotNull(result);
@@ -154,13 +155,13 @@ namespace SolutionIntrospector.Tests
             }
 
             [Fact]
-            public void TestGetAssemblyInfo_ReturnsNullForInvalidPath()
+            public async void TestGetAssemblyInfo_ReturnsNullForInvalidPath()
             {
                 // Arrange
-                mockIntrospector.Setup(m => m.GetAssemblyInfo(It.IsAny<string>())).Returns((Assembly)null);
+                mockIntrospector.Setup(m => m.GetAssemblyInfoAsync(It.IsAny<string>())).ReturnsAsync((Assembly)null);
 
                 // Act
-                var result = mockIntrospector.Object.GetAssemblyInfo("invalidPath");
+                var result = await mockIntrospector.Object.GetAssemblyInfoAsync("invalidPath");
 
                 // Assert
                 Assert.Null(result);
@@ -169,21 +170,22 @@ namespace SolutionIntrospector.Tests
         // ... Continuing from the previous part
 
         [Fact]
-        public void TestListNamespaces_ReturnsCorrectListOfNamespaces()
+        public async void TestListNamespacesAsync_ReturnsCorrectListOfNamespaces()
         {
             // Arrange
             var namespaces = new List<string> { "System", "Custom" };
-            mockIntrospector.Setup(m => m.ListNamespaces(It.IsAny<string>())).Returns(namespaces);
+            mockIntrospector.Setup(m => m.ListNamespacesAsync(It.IsAny<string>())).ReturnsAsync(namespaces);
 
             // Act
-            var result = mockIntrospector.Object.ListNamespaces("fakePath");
+            var result = await mockIntrospector.Object.ListNamespacesAsync("fakePath");
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(2, result.Count);
+            Assert.Equal(2, result.ToList().Count);
             Assert.Contains("System", result);
             Assert.Contains("Custom", result);
         }
+
 
         // ... Similar tests for other methods
         // ListClasses, GetClassInfo, ListMethods, GetMethodSyntaxTree, ListFields, GetFieldInfo

@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SolutionIntrospector.DTO;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 
 namespace SolutionIntrospector
@@ -19,17 +20,16 @@ namespace SolutionIntrospector
         }
 
         [HttpGet("GetSolutionInfo")]
-        public ActionResult<SolutionDto> GetSolutionInfo(string solutionPath)
+        public async Task<ActionResult<SolutionDto>> GetSolutionInfoAsync(string solutionPath)
         {
             try
             {
-                var solutionInfo = _solutionIntrospector.GetSolutionInfo(solutionPath);
-                var solutionDto = MapToSolutionDto(solutionInfo); // Assuming a mapper method is implemented.
+                var solutionInfo = await _solutionIntrospector.GetSolutionInfoAsync(solutionPath);
+                var solutionDto = MapToSolutionDto(solutionInfo);
                 return Ok(solutionDto);
             }
             catch (Exception ex)
             {
-                // Handle exception, log if necessary, and return an appropriate error response.
                 return StatusCode(500, ex.Message);
             }
         }
@@ -49,189 +49,166 @@ namespace SolutionIntrospector
             return solutionDto;
         }
 
-
         [HttpGet("ListProjects")]
-        public ActionResult<List<ProjectDto>> ListProjects(string solutionPath)
+        public async Task<ActionResult<List<ProjectDto>>> ListProjectsAsync(string solutionPath)
         {
             try
             {
-                var projects = _solutionIntrospector.ListProjects(solutionPath);
+                var projects = await _solutionIntrospector.ListProjectsAsync(solutionPath);
                 var projectDtos = projects.Select(p => new ProjectDto
                 {
                     Name = p.Name
-                    // Map additional needed project properties...
+                    // Map additional properties...
                 }).ToList();
                 return Ok(projectDtos);
             }
             catch (Exception ex)
             {
-                // Log the exception and return an error response.
                 return StatusCode(500, ex.Message);
             }
         }
 
-        [HttpGet("GetProjectInfo")]
-        public ActionResult<ProjectDto> GetProjectInfo(string projectPath)
+
+
+        public async Task<ActionResult<ProjectDto>> GetProjectInfoAsync(string projectPath)
         {
-            try
+            var projectInfo = await _solutionIntrospector.GetProjectInfoAsync(projectPath);
+            var projectDto = MapToProjectDto(projectInfo);
+            return Ok(projectDto);
+        }
+
+        public async Task<ActionResult<IEnumerable<AssemblyDto>>> ListAssembliesAsync(string projectPath)
+        {
+            var assemblies = await _solutionIntrospector.ListAssembliesAsync(projectPath);
+            var assemblyDtos = assemblies.Select(a => MapToAssemblyDto(a));
+            return Ok(assemblyDtos);
+        }
+
+        public async Task<ActionResult<AssemblyDto>> GetAssemblyInfoAsync(string assemblyPath)
+        {
+            var assemblyInfo = await _solutionIntrospector.GetAssemblyInfoAsync(assemblyPath);
+            var assemblyDto = MapToAssemblyDto(assemblyInfo);
+            return Ok(assemblyDto);
+        }
+
+        public async Task<ActionResult<IEnumerable<string>>> ListNamespacesAsync(string assemblyPath)
+        {
+            var namespaces = await _solutionIntrospector.ListNamespacesAsync(assemblyPath);
+            return Ok(namespaces);
+        }
+
+        public async Task<ActionResult<IEnumerable<TypeDto>>> ListClassesAsync(string namespaceName, string assemblyPath)
+        {
+            var classes = await _solutionIntrospector.ListClassesAsync(namespaceName, assemblyPath);
+            var classDtos = classes.Select(c => MapToTypeDto(c));
+            return Ok(classDtos);
+        }
+
+        public async Task<ActionResult<TypeDto>> GetClassInfoAsync(string className, string namespaceName, string assemblyPath)
+        {
+            var classInfo = await _solutionIntrospector.GetClassInfoAsync(className, namespaceName, assemblyPath);
+            var classDto = MapToTypeDto(classInfo);
+            return Ok(classDto);
+        }
+
+        public async Task<ActionResult<IEnumerable<MethodInfoDto>>> ListMethodsAsync(string className, string namespaceName, string assemblyPath)
+        {
+            var methods = await _solutionIntrospector.ListMethodsAsync(className, namespaceName, assemblyPath);
+            var methodDtos = methods.Select(m => MapToMethodInfoDto(m));
+            return Ok(methodDtos);
+        }
+
+        public async Task<ActionResult<IEnumerable<MethodSyntaxTreeDto>>> GetMethodSyntaxTreeAsync(string methodName, string className, string namespaceName, string assemblyPath)
+        {
+            var methodSyntaxTrees = await _solutionIntrospector.GetMethodSyntaxTreeAsync(methodName, className, namespaceName, assemblyPath);
+            var methodSyntaxTreeDtos = methodSyntaxTrees.Select(m => MapToMethodDeclarationSyntaxDto(m));
+            return Ok(methodSyntaxTreeDtos);
+        }
+
+        public async Task<ActionResult<IEnumerable<FieldInfoDto>>> ListFieldsAsync(string className, string namespaceName, string assemblyPath)
+        {
+            var fields = await _solutionIntrospector.ListFieldsAsync(className, namespaceName, assemblyPath);
+            var fieldDtos = fields.Select(f => MapToFieldInfoDto(f));
+            return Ok(fieldDtos);
+        }
+
+        public async Task<ActionResult<FieldInfoDto>> GetFieldInfoAsync(string fieldName, string className, string namespaceName, string assemblyPath)
+        {
+            var fieldInfo = await _solutionIntrospector.GetFieldInfoAsync(fieldName, className, namespaceName, assemblyPath);
+            var fieldInfoDto = MapToFieldInfoDto(fieldInfo);
+            return Ok(fieldInfoDto);
+        }
+        private ProjectDto MapToProjectDto(Project project)
+        {
+            return new ProjectDto
             {
-                var projectInfo = _solutionIntrospector.GetProjectInfo(projectPath);
-                var projectInfoDto = new ProjectDto
+                Name = project.Name,
+                FilePath = project.FilePath
+            };
+        }
+
+        private AssemblyDto MapToAssemblyDto(Assembly assembly)
+        {
+            return new AssemblyDto
+            {
+                Name = assembly.GetName().Name,
+                Version = assembly.GetName().Version.ToString(),
+                Culture = assembly.GetName().CultureInfo?.Name,
+                PublicKeyToken = BitConverter.ToString(assembly.GetName().GetPublicKeyToken()).Replace("-", string.Empty)
+            };
+        }
+
+        private TypeDto MapToTypeDto(Type type)
+        {
+            return new TypeDto
+            {
+                Name = type.Name,
+                Namespace = type.Namespace,
+                AssemblyName = type.Assembly.GetName().Name
+            };
+        }
+
+        private MethodInfoDto MapToMethodInfoDto(MethodInfo methodInfo)
+        {
+            return new MethodInfoDto
+            {
+                Name = methodInfo.Name,
+                ReturnType = methodInfo.ReturnType.FullName,
+                Parameters = methodInfo.GetParameters().Select(p => new ParameterDto
                 {
-                    FilePath = projectInfo.FilePath,
-                    Name = projectInfo.Name
-                    // Map additional needed project properties...
-                };
-                return Ok(projectInfoDto);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception and return an error response.
-                return StatusCode(500, ex.Message);
-            }
-        }
-        [HttpGet("ListAssemblies")]
-        public ActionResult<List<AssemblyDto>> ListAssemblies(string projectPath)
-        {
-            try
-            {
-                var assemblies = _solutionIntrospector.ListAssemblies(projectPath);
-                var assemblyDtos = assemblies.Select(a => new AssemblyDto
-                {
-                    Name = a.FullName,
-                    Version = a.Location
-                    // Map additional needed assembly properties...
-                }).ToList();
-                return Ok(assemblyDtos);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception and return an error response.
-                return StatusCode(500, ex.Message);
-            }
+                    Name = p.Name,
+                    Type = p.ParameterType.FullName
+                }).ToList()
+            };
         }
 
-        [HttpGet("GetAssemblyInfo")]
-        public ActionResult<AssemblyDto> GetAssemblyInfo(string assemblyPath)
+        private FieldInfoDto MapToFieldInfoDto(FieldInfo fieldInfo)
         {
-            try
+            return new FieldInfoDto
             {
-                var assemblyInfo = _solutionIntrospector.GetAssemblyInfo(assemblyPath);
-                var detailedAssemblyInfoDto = new AssemblyDto
-                {
-                    Name = assemblyInfo.FullName
-                    // Map additional needed assembly properties...
-                };
-                return Ok(detailedAssemblyInfoDto);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception and return an error response.
-                return StatusCode(500, ex.Message);
-            }
+                Name = fieldInfo.Name,
+                FieldType = fieldInfo.FieldType.FullName
+            };
         }
 
-        [HttpGet("ListNamespaces")]
-        public ActionResult<List<string>> ListNamespaces(string assemblyPath)
+        private MethodSyntaxTreeDto MapToMethodDeclarationSyntaxDto(MethodDeclarationSyntax methodSyntax)
         {
-            try
+            return new MethodSyntaxTreeDto
             {
-                var namespaces = _solutionIntrospector.ListNamespaces(assemblyPath);
-                return Ok(namespaces);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception and return an error response.
-                return StatusCode(500, ex.Message);
-            }
-        }
-        [HttpGet("ListClasses")]
-        public ActionResult<List<TypeDto>> ListClasses(string namespaceName, string assemblyPath)
-        {
-            try
-            {
-                var classes = _solutionIntrospector.ListClasses(namespaceName, assemblyPath);
-                var classDtos = classes.Select(c => new TypeDto
-                {
-                    Name = c.Name
-                    // Map additional needed type information...
-                }).ToList();
-                return Ok(classDtos);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception and return an error response.
-                return StatusCode(500, ex.Message);
-            }
+                MethodName = methodSyntax.Identifier.ValueText,
+                Root = MapSyntaxNodeDto(methodSyntax)
+            };
         }
 
-        [HttpGet("GetClassInfo")]
-        public ActionResult<TypeDto> GetClassInfo(string className, string namespaceName, string assemblyPath)
+        private SyntaxNodeDto MapSyntaxNodeDto(SyntaxNode syntaxNode)
         {
-            try
+            return new SyntaxNodeDto
             {
-                var classInfo = _solutionIntrospector.GetClassInfo(className, namespaceName, assemblyPath);
-                var detailedTypeInfoDto = new TypeDto
-                {
-                    Name = classInfo.Name
-                    // Map additional needed type information...
-                };
-                return Ok(detailedTypeInfoDto);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception and return an error response.
-                return StatusCode(500, ex.Message);
-            }
+                Kind = syntaxNode.Kind().ToString(),
+                Text = syntaxNode.ToString(),
+                ChildNodes = syntaxNode.ChildNodes().Select(MapSyntaxNodeDto).ToList()
+            };
         }
-
-        [HttpGet("ListMethods")]
-        public ActionResult<List<MethodInfoDto>> ListMethods(string className, string namespaceName, string assemblyPath)
-        {
-            try
-            {
-                var methods = _solutionIntrospector.ListMethods(className, namespaceName, assemblyPath);
-                var methodInfoDtos = methods.Select(m => new MethodInfoDto
-                {
-                    Name = m.Name,
-                    ReturnType = m.ReturnType.ToString(),
-                    Parameters = m.GetParameters().Select(p => new ParameterDto
-                    {
-                        Name = p.Name,
-                        Type = p.ParameterType.FullName // or Name, depending on the desired level of detail.
-                    }).ToList()
-                }).ToList();
-                return Ok(methodInfoDtos);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception and return an error response.
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        [HttpGet("GetMethodSyntaxTree")]
-        public ActionResult<MethodSyntaxTreeDto> GetMethodSyntaxTree(string methodName, string className, string namespaceName, string assemblyPath)
-        {
-            try
-            {
-                // Assuming _solutionIntrospector.GetMethodSyntaxTree returns a SyntaxTree or IEnumerable<SyntaxTree>
-                var syntaxTrees = _solutionIntrospector.GetMethodSyntaxTree(methodName, className, namespaceName, assemblyPath);
-                var methodSyntaxTreeDto = syntaxTrees.Select(syntaxTree => new MethodSyntaxTreeDto
-                {
-                    MethodName = methodName,
-                    Root = ConvertSyntaxNode(syntaxTree)
-                }).FirstOrDefault(); // Assuming you want the first SyntaxTree for the method.
-
-                return Ok(methodSyntaxTreeDto);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception and return an error response.
-                return StatusCode(500, ex.Message);
-            }
-        }
-
         private SyntaxNodeDto ConvertSyntaxNode(SyntaxNode node)
         {
             return new SyntaxNodeDto
@@ -242,28 +219,6 @@ namespace SolutionIntrospector
             };
         }
 
-        [HttpGet("ListFields")]
-        public ActionResult<List<FieldInfoDto>> ListFields(string className, string namespaceName, string assemblyPath)
-        {
-            try
-            {
-                var fields = _solutionIntrospector.ListFields(className, namespaceName, assemblyPath);
-                var fieldDtos = fields.Select(field => new FieldInfoDto
-                {
-                    Name = field.Name,
-                    FieldType = field.FieldType.ToString(),
-                    // Add any additional transformations for other FieldInfo properties if needed.
-                }).ToList();
-
-                return Ok(fieldDtos);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception and return an error response.
-                return StatusCode(500, ex.Message);
-            }
-        }
-
         // DTO for field information
         public class FieldInfoDto
         {
@@ -271,30 +226,6 @@ namespace SolutionIntrospector
             public string FieldType { get; set; }
             // Other relevant properties from FieldInfo to be included as needed.
         }
-
-        [HttpGet("GetFieldInfo")]
-        public ActionResult<FieldInfoDto> GetFieldInfo(string fieldName, string className, string namespaceName, string assemblyPath)
-        {
-            try
-            {
-                var fieldInfo = _solutionIntrospector.GetFieldInfo(fieldName, className, namespaceName, assemblyPath);
-                var fieldInfoDto = new FieldInfoDto
-                {
-                    Name = fieldInfo.Name,
-                    FieldType = fieldInfo.FieldType.ToString(),
-                    // Additional FieldInfo properties can be added here as needed.
-                };
-
-                return Ok(fieldInfoDto);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception and return an error response.
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        // Assuming FieldInfoDto is already defined from previous implementation.
 
     }
 
