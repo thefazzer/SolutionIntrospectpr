@@ -2,7 +2,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
@@ -15,56 +17,27 @@ namespace SolutionIntrospector
     {
         private readonly ConcurrentDictionary<string, Task<Solution>> solutionCache = new ConcurrentDictionary<string, Task<Solution>>();
         private readonly ConcurrentDictionary<string, Task<Project>> projectCache = new ConcurrentDictionary<string, Task<Project>>();
-
-        private static readonly Lazy<MSBuildWorkspace> LazyWorkspace = new Lazy<MSBuildWorkspace>(() =>
-        {
-            //AppContext.SetSwitch("Switch.Microsoft.Build.NoInprocNode", true);
-            //MSBuildLocator.RegisterMSBuildPath(@"C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin");
-
-            var visualStudioInstances = MSBuildLocator.QueryVisualStudioInstances();
-            foreach (var inst in visualStudioInstances)
-            {
-                Console.WriteLine(inst.Name);
-                Console.WriteLine(inst.MSBuildPath);
-            }
-            var instance = Microsoft.Build.Locator.MSBuildLocator.QueryVisualStudioInstances().First();
-            Microsoft.Build.Locator.MSBuildLocator.RegisterInstance(instance);
-
-
-            //MSBuildLocator.RegisterDefaults();
-            return MSBuildWorkspace.Create();
-        });
+        private readonly ConcurrentDictionary<string, Assembly> assemblyCache = new ConcurrentDictionary<string, Assembly>();
+        private static readonly Lazy<MSBuildWorkspace> LazyWorkspace = new Lazy<MSBuildWorkspace>(CreateWorkspace);
+        private static readonly object locker = new object();
 
         public static MSBuildWorkspace WorkspaceInstance => LazyWorkspace.Value;
 
-
-        // Assuming Assembly loading can be done synchronously, otherwise you would need a similar async approach
-        private readonly ConcurrentDictionary<string, Assembly> assemblyCache = new ConcurrentDictionary<string, Assembly>();
-
         public async Task<Solution> GetSolutionInfoAsync(string solutionPath)
         {
-            return await solutionCache.GetOrAdd(solutionPath, async path =>
-            {
-                var workspace = WorkspaceInstance;
-                return await workspace.OpenSolutionAsync(path);
-            });
+            return await solutionCache.GetOrAdd(solutionPath, path => Task.Run(() => OpenSolution(path)));
         }
 
         public async Task<IEnumerable<Project>> ListProjectsAsync(string solutionPath)
         {
             var solution = await GetSolutionInfoAsync(solutionPath);
-            return new List<Project>(solution.Projects);
+            return solution.Projects;
         }
 
         public async Task<Project> GetProjectInfoAsync(string projectPath)
         {
-            return await projectCache.GetOrAdd(projectPath, async path =>
-            {
-                var workspace = WorkspaceInstance;
-                return await workspace.OpenProjectAsync(path);
-            });
+            return await projectCache.GetOrAdd(projectPath, path => Task.Run(() => OpenProject(path)));
         }
-
         public async Task<IEnumerable<Assembly>> ListAssembliesAsync(string projectPath)
         {
             var project = await GetProjectInfoAsync(projectPath);
@@ -130,6 +103,43 @@ namespace SolutionIntrospector
             var root = tree.GetRoot();
             var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(m => m.Identifier.Text == methodName).ToList();
             return methods;
+        }
+        private static Solution OpenSolution(string path)
+        {
+            lock (locker)
+            {
+                var workspace = WorkspaceInstance;
+                if (workspace.CurrentSolution.FilePath == null ||
+                    !workspace.CurrentSolution.FilePath.Equals(path, StringComparison.OrdinalIgnoreCase))
+                {
+                    return workspace.OpenSolutionAsync(path).Result;
+                }
+
+                return workspace.CurrentSolution;
+            }
+        }
+
+        private static Project OpenProject(string path)
+        {
+            lock (locker)
+            {
+                var workspace = WorkspaceInstance;
+                var project = workspace.CurrentSolution.Projects.FirstOrDefault(p => p.FilePath.Equals(path, StringComparison.OrdinalIgnoreCase));
+
+                if (project == null)
+                {
+                    return workspace.OpenProjectAsync(path).Result;
+                }
+
+                return project;
+            }
+        }
+
+        private static MSBuildWorkspace CreateWorkspace()
+        {
+            var instance = MSBuildLocator.QueryVisualStudioInstances().First();
+            MSBuildLocator.RegisterInstance(instance);
+            return MSBuildWorkspace.Create();
         }
     }
 }
