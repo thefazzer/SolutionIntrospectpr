@@ -36,7 +36,19 @@ namespace SolutionIntrospector
 
         public async Task<Project> GetProjectInfoAsync(string projectPath)
         {
-            return await projectCache.GetOrAdd(projectPath, path => Task.Run(() => OpenProject(path)));
+            await semaphore.WaitAsync();
+            try
+            {
+                if (!WorkspaceInstance.CurrentSolution.Projects.Any(p => p.FilePath == projectPath))
+                {
+                    return await projectCache.GetOrAdd(projectPath, path => Task.Run(() => OpenProject(projectPath)));
+                }
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+            return null;
         }
         public async Task<IEnumerable<Assembly>> ListAssembliesAsync(string projectPath)
         {
@@ -86,7 +98,7 @@ namespace SolutionIntrospector
         public async Task<IEnumerable<FieldInfo>> ListFieldsAsync(string className, string namespaceName, string assemblyPath)
         {
             var type = await GetClassInfoAsync(className, namespaceName, assemblyPath);
-            return new List<FieldInfo>(type.GetFields());
+            return new List<FieldInfo>(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static));
         }
 
         public async Task<FieldInfo> GetFieldInfoAsync(string fieldName, string className, string namespaceName, string assemblyPath)
@@ -141,5 +153,14 @@ namespace SolutionIntrospector
             MSBuildLocator.RegisterInstance(instance);
             return MSBuildWorkspace.Create();
         }
+
+
+        public async Task<string> GetHomePageAsync()
+        {
+            return await Task.FromResult("SolutionIntrospector API V1");
+        }
+
+        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+
     }
 }

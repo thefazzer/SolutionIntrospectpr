@@ -26,7 +26,7 @@ namespace SolutionIntrospector
             {
                 var solutionInfo = await _solutionIntrospector.GetSolutionInfoAsync(solutionPath);
                 var solutionDto = MapToSolutionDto(solutionInfo);
-                return Ok(solutionDto);
+                return solutionDto;
             }
             catch (Exception ex)
             {
@@ -187,7 +187,7 @@ namespace SolutionIntrospector
             return new FieldInfoDto
             {
                 Name = fieldInfo.Name,
-                FieldType = fieldInfo.FieldType.FullName
+                Type = fieldInfo.FieldType.FullName
             };
         }
 
@@ -219,13 +219,7 @@ namespace SolutionIntrospector
             };
         }
 
-        // DTO for field information
-        public class FieldInfoDto
-        {
-            public string Name { get; set; }
-            public string FieldType { get; set; }
-            // Other relevant properties from FieldInfo to be included as needed.
-        }
+     
 
     }
 

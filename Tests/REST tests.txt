@@ -1,0 +1,17 @@
+curl -k -X GET "https://localhost:7065/solution/SolutionIntrospector.sln"
+
+curl -k -X GET "https://localhost:7065/solution/SolutionIntrospector.sln/projects"
+
+curl -k -X GET "https://localhost:7065/project/SolutionIntrospector.csproj"
+
+curl -k -X GET "https://localhost:7065/project/SolutionIntrospector.csproj/assemblies"
+
+curl -k -X GET "https://localhost:7065/assembly/C:%5CUsers%5CUSER%5Csource%5Crepos%5CSolutionIntrospectpr%5Cbin%5CDebug%5Cnet7.0%5CSolutionIntrospector.dll"
+
+curl -k -X GET "https://localhost:7065/assembly/C:%5CUsers%5CUSER%5Csource%5Crepos%5CSolutionIntrospectpr%5Cbin%5CDebug%5Cnet7.0%5CSolutionIntrospector.dll/namespaces"
+
+curl -k -X GET "https://localhost:7065/class/SolutionController?namespaceName=SolutionIntrospector&assemblyPath=C:%5CUsers%5CUSER%5Csource%5Crepos%5CSolutionIntrospectpr%5Cbin%5CDebug%5Cnet7.0%5CSolutionIntrospector.dll"
+
+curl -k -X GET "https://localhost:7065/class?className=SolutionController&namespaceName=SolutionIntrospector&assemblyPath=C:%5CUsers%5CUSER%5Csource%5Crepos%5CSolutionIntrospectpr%5Cbin%5CDebug%5Cnet7.0%5CSolutionIntrospector.dll"
+
+curl -k -X GET "https://localhost:7065/class/methods?className=SolutionController&namespaceName=SolutionIntrospector&assemblyPath=C:%5CUsers%5CUSER%5Csource%5Crepos%5CSolutionIntrospectpr%5Cbin%5CDebug%5Cnet7.0%5CSolutionIntrospector.dll"

@@ -10,6 +10,7 @@ namespace SolutionIntrospector.DTO
     {
         public string FilePath { get; set; }
         public List<ProjectDto> Projects { get; set; }
+
     }
 
     public class ProjectDto
@@ -57,7 +58,6 @@ namespace SolutionIntrospector.DTO
         public string Name { get; set; }
         public string Type { get; set; }
     }
-
     public class SyntaxNodeDto
     {
         public string Kind { get; set; }

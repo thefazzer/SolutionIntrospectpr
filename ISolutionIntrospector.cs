@@ -9,6 +9,7 @@ namespace SolutionIntrospector
 {
     public interface ISolutionIntrospector
     {
+        Task<string> GetHomePageAsync();
         Task<Solution> GetSolutionInfoAsync(string solutionPath);
         Task<IEnumerable<Project>> ListProjectsAsync(string solutionPath);
         Task<Project> GetProjectInfoAsync(string projectPath);
