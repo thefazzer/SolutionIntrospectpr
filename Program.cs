@@ -44,13 +44,13 @@ app.MapGet("/", async () => "SolutionIntrospector API V1");
 
 // Other middleware...
 ISolutionIntrospector introspector = app.Services.GetRequiredService<ISolutionIntrospector>();
-string s = @"C:\Users\USER\source\repos\SolutionIntrospectpr\SolutionIntrospector.sln";
-app.MapGet("/{*s}", async (string s) =>
-{
-    s = System.Net.WebUtility.UrlDecode(s);
-    Microsoft.CodeAnalysis.Solution solutionInfoResult = await introspector.GetSolutionInfoAsync(s);
-    return solutionInfoResult.Projects.Count();
-});
+//string s = @"C:\Users\USER\source\repos\SolutionIntrospectpr\SolutionIntrospector.sln";
+//app.MapGet("/{*s}", async (string s) =>
+//{
+//    s = System.Net.WebUtility.UrlDecode(s);
+//    Microsoft.CodeAnalysis.Solution solutionInfoResult = await introspector.GetSolutionInfoAsync(s);
+//    return solutionInfoResult.Projects.Count();
+//});
 
 //await introspector.GetHomePageAsync());
 SolutionController controller = new SolutionController(introspector);
@@ -114,9 +114,9 @@ app.MapGet("/class/methods", async (string className, string namespaceName, stri
     return dtos;
 });
 
-app.MapGet("/method/syntaxtree", async (string methodName, string className, string namespaceName, string assemblyPath) =>
+app.MapGet("/method/syntaxtree", async (string methodName, string className, string namespaceName, string projectPath) =>
 {
-    var actionResult = await controller.GetMethodSyntaxTreeAsync(methodName, className, namespaceName, assemblyPath);
+    var actionResult = await controller.GetMethodSyntaxTreeAsync(methodName, className, namespaceName, projectPath);
     var dtos = (actionResult.Result as OkObjectResult)?.Value as IEnumerable<MethodSyntaxTreeDto>;
     return dtos;
 });
@@ -128,12 +128,44 @@ app.MapGet("/class/fields", async (string className, string namespaceName, strin
     return dtos;
 });
 
-app.MapGet("/field/{fieldName}", async (string fieldName, string className, string namespaceName, string assemblyPath) =>
+app.MapGet("/field", async (string fieldName, string className, string namespaceName, string assemblyPath) =>
 {
     var actionResult = await controller.GetFieldInfoAsync(fieldName, className, namespaceName, assemblyPath);
     var dto = (actionResult.Result as OkObjectResult)?.Value as FieldInfoDto;
     return dto;
 });
+
+// Source code retrieval
+//app.MapGet("/project/{projectPath}/files", async (string projectPath) =>
+//{
+//    var actionResult = await controller.ListSourceFilesAsync(projectPath);
+//    var dtos = (actionResult.Result as OkObjectResult)?.Value as IEnumerable<SourceFileDto>;
+//    return dtos;
+//});
+
+//app.MapGet("/file/content", async (string filePath) =>
+//{
+//    var actionResult = await controller.GetFileContentAsync(filePath);
+//    var content = (actionResult.Result as OkObjectResult)?.Value as string;
+//    return content;
+//});
+
+//// Project references
+//app.MapGet("/project/{projectPath}/references", async (string projectPath) =>
+//{
+//    var actionResult = await controller.ListProjectReferencesAsync(projectPath);
+//    var dtos = (actionResult.Result as OkObjectResult)?.Value as IEnumerable<ProjectReferenceDto>;
+//    return dtos;
+//});
+
+//// Package dependencies
+//app.MapGet("/project/{projectPath}/packages", async (string projectPath) =>
+//{
+//    var actionResult = await controller.ListPackageReferencesAsync(projectPath);
+//    var dtos = (actionResult.Result as OkObjectResult)?.Value as IEnumerable<PackageReferenceDto>;
+//    return dtos;
+//});
+
 
 
 app.Run();

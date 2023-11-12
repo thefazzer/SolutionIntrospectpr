@@ -218,10 +218,5 @@ namespace SolutionIntrospector
                 ChildNodes = node.ChildNodes().Select(ConvertSyntaxNode).ToList()
             };
         }
-
-     
-
     }
-
-
 }

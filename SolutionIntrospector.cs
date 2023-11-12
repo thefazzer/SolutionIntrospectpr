@@ -39,17 +39,38 @@ namespace SolutionIntrospector
             await semaphore.WaitAsync();
             try
             {
-                if (!WorkspaceInstance.CurrentSolution.Projects.Any(p => p.FilePath == projectPath))
+                Project project = null;
+                // Normalize the file path for comparison
+                var normalizedPath = Path.GetFullPath(projectPath);
+
+                // Check inside the semaphore block to ensure the project hasn't been added by another thread
+                var existingProject = WorkspaceInstance.CurrentSolution.Projects
+                    .FirstOrDefault(p => Path.GetFullPath(p.FilePath) == normalizedPath);
+
+                if (existingProject == null)
                 {
-                    return await projectCache.GetOrAdd(projectPath, path => Task.Run(() => OpenProject(projectPath)));
+                    // Try to get or add the project atomically to prevent race conditions
+                    project = await projectCache.GetOrAdd(normalizedPath, async path =>
+                    {
+                        // Open the project and add it to the workspace
+                        var loadedProject = await WorkspaceInstance.OpenProjectAsync(path);
+                        return loadedProject;
+                    });
                 }
+                else
+                {
+                    // If the project is already added, return it directly from the workspace
+                    project = existingProject;
+                }
+
+                return project;
             }
             finally
             {
                 semaphore.Release();
             }
-            return null;
         }
+
         public async Task<IEnumerable<Assembly>> ListAssembliesAsync(string projectPath)
         {
             var project = await GetProjectInfoAsync(projectPath);
@@ -104,16 +125,36 @@ namespace SolutionIntrospector
         public async Task<FieldInfo> GetFieldInfoAsync(string fieldName, string className, string namespaceName, string assemblyPath)
         {
             var type = await GetClassInfoAsync(className, namespaceName, assemblyPath);
-            return await Task.Run(() => type.GetField(fieldName));
+            return await Task.Run(() => type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static));
         }
 
-        public async Task<IEnumerable<MethodDeclarationSyntax>> GetMethodSyntaxTreeAsync(string methodName, string className, string namespaceName, string assemblyPath)
+        public async Task<IEnumerable<MethodDeclarationSyntax>> GetMethodSyntaxTreeAsync(string methodName, string className, string namespaceName, string projectPath)
         {
-            var project = await GetProjectInfoAsync(assemblyPath); // Ensure projectPath is used here if different from assemblyPath
+            var project = await GetProjectInfoAsync(projectPath);
             var compilation = await project.GetCompilationAsync();
-            var tree = compilation.SyntaxTrees.FirstOrDefault(); // You might want to ensure the correct syntax tree is selected
-            var root = tree.GetRoot();
-            var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(m => m.Identifier.Text == methodName).ToList();
+            var trees = compilation.SyntaxTrees;
+
+            List<MethodDeclarationSyntax> methods = new List<MethodDeclarationSyntax>();
+
+            foreach (var tree in trees)
+            {
+                var root = await tree.GetRootAsync();
+                var model = compilation.GetSemanticModel(tree);
+
+                var classes = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => c.Identifier.Text == className);
+
+                foreach (var classDeclaration in classes)
+                {
+                    var declaredSymbol = model.GetDeclaredSymbol(classDeclaration);
+
+                    if (declaredSymbol != null && declaredSymbol.ContainingNamespace.Name == namespaceName)
+                    {
+                        var methodsInClass = classDeclaration.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(m => m.Identifier.Text == methodName);
+                        methods.AddRange(methodsInClass);
+                    }
+                }
+            }
+
             return methods;
         }
         private static Solution OpenSolution(string path)
@@ -131,7 +172,7 @@ namespace SolutionIntrospector
             }
         }
 
-        private static Project OpenProject(string path)
+        private static Microsoft.CodeAnalysis.Project OpenProject(string path)
         {
             lock (locker)
             {
@@ -158,6 +199,88 @@ namespace SolutionIntrospector
         public async Task<string> GetHomePageAsync()
         {
             return await Task.FromResult("SolutionIntrospector API V1");
+        }
+
+        public async Task<IEnumerable<string>> ListSourceFilesAsync(string projectPath)
+        {
+            // Ensure the project file exists
+            if (!File.Exists(projectPath))
+            {
+                throw new FileNotFoundException("Project file not found.", projectPath);
+            }
+
+            // Load the project
+            var project = OpenProject(projectPath);
+            // Get all source files, this assumes they are included in the project
+            var filePaths = project.Documents
+                                   .Select(doc => doc.FilePath)
+                                   .Where(path => !string.IsNullOrWhiteSpace(path))
+                                   .ToList();
+
+            return filePaths;
+        }
+
+        public async Task<IEnumerable<string>> GetAllSourceFilesAsync(Project project)
+        {
+            // This will hold the file paths for all source documents in the project
+            var filePaths = project.Documents
+                                   .Select(doc => doc.FilePath)
+                                   .Where(path => !string.IsNullOrWhiteSpace(path))
+                                   .ToList();
+
+            return filePaths;
+        }
+
+        public async Task<string> GetFileContentAsync(string filePath)
+        {
+            // Ensure the file exists
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException("File not found.", filePath);
+            }
+
+            // Read the file content
+            var content = await File.ReadAllTextAsync(filePath);
+            return content;
+        }
+
+        public async Task<IEnumerable<Microsoft.Build.Evaluation.ProjectItem>> ListProjectReferencesAsync(string projectPath)
+        {
+            // Ensure the project file exists
+            if (!File.Exists(projectPath))
+            {
+                throw new FileNotFoundException("Project file not found.", projectPath);
+            }
+
+            // Load the project
+            var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection();
+            var project = projectCollection.LoadProject(projectPath);
+            var projectReferences = project.GetItems("ProjectReference");
+             //   .Select(pr => new ProjectReference(pr.EvaluatedInclude));
+                
+
+            return projectReferences;
+        }
+
+        public async Task<IEnumerable<Microsoft.Build.Evaluation.ProjectItem>> ListPackageReferencesAsync(string projectPath)
+        {
+            // Ensure the project file exists
+            if (!File.Exists(projectPath))
+            {
+                throw new FileNotFoundException("Project file not found.", projectPath);
+            }
+
+            // Load the project
+            var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection();
+            var msbuildProject = projectCollection.LoadProject(projectPath);
+            var packageReferences = msbuildProject.Items
+                .Where(i => i.ItemType == "PackageReference")
+                .ToList();
+
+            // Make sure to dispose of the project collection to release all MSBuild-related resources
+            projectCollection.Dispose();
+
+            return packageReferences;
         }
 
         private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
