@@ -3,18 +3,18 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
-using SolutionIntrospector;
-using SolutionIntrospector.DTO;
+using DotNetAnalyzerPro;
+using DotNetAnalyzerPro.DTO;
 using Swashbuckle.AspNetCore.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the DI container.
-builder.Services.AddSingleton<ISolutionIntrospector, SolutionIntrospector.SolutionIntrospector>(); // Registers SolutionIntrospector with DI
+builder.Services.AddSingleton<IDotNetAnalyzerPro, DotNetAnalyzerPro.DotNetAnalyzerPro>(); // Registers DotNetAnalyzerPro with DI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "SolutionIntrospector API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "DotNetAnalyzerPro API", Version = "v1" });
 });
 
 builder.Services.AddCors(options =>
@@ -33,18 +33,18 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SolutionIntrospector API V1"));
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "DotNetAnalyzerPro API V1"));
 }
 
 app.UseHttpsRedirection();
 
 app.UseCors("OpenCorsPolicy");
 
-app.MapGet("/", async () => "SolutionIntrospector API V1");
+app.MapGet("/", async () => "DotNetAnalyzerPro API V1");
 
 // Other middleware...
-ISolutionIntrospector introspector = app.Services.GetRequiredService<ISolutionIntrospector>();
-//string s = @"C:\Users\USER\source\repos\SolutionIntrospectpr\SolutionIntrospector.sln";
+IDotNetAnalyzerPro introspector = app.Services.GetRequiredService<IDotNetAnalyzerPro>();
+//string s = @"C:\Users\USER\source\repos\DotNetAnalyzerPro\DotNetAnalyzerPro.sln";
 //app.MapGet("/{*s}", async (string s) =>
 //{
 //    s = System.Net.WebUtility.UrlDecode(s);

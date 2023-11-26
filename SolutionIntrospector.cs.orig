@@ -8,9 +8,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Reflection;
 using Microsoft.CodeAnalysis.MSBuild;
 
-namespace SolutionIntrospector
+namespace DotNetAnalyzerPro
 {
-    public class SolutionIntrospector : ISolutionIntrospector
+    public class DotNetAnalyzerPro : IDotNetAnalyzerPro
     {
         private readonly ConcurrentDictionary<string, Solution> solutionCache = new ConcurrentDictionary<string, Solution>();
         private readonly ConcurrentDictionary<string, Project> projectCache = new ConcurrentDictionary<string, Project>();

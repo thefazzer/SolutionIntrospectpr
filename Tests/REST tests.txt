@@ -1,21 +1,21 @@
-curl -k -X GET "https://localhost:7065/solution/SolutionIntrospector.sln"
+curl -k -X GET "https://localhost:7065/solution/DotNetAnalyzerPro.sln"
 
-curl -k -X GET "https://localhost:7065/solution/SolutionIntrospector.sln/projects"
+curl -k -X GET "https://localhost:7065/solution/DotNetAnalyzerPro.sln/projects"
 
-curl -k -X GET "https://localhost:7065/project/SolutionIntrospector.csproj"
+curl -k -X GET "https://localhost:7065/project/DotNetAnalyzerPro.csproj"
 
-curl -k -X GET "https://localhost:7065/project/SolutionIntrospector.csproj/assemblies"
+curl -k -X GET "https://localhost:7065/project/DotNetAnalyzerPro.csproj/assemblies"
 
-curl -k -X GET "https://localhost:7065/assembly/C:%5CUsers%5CUSER%5Csource%5Crepos%5CSolutionIntrospectpr%5Cbin%5CDebug%5Cnet7.0%5CSolutionIntrospector.dll"
+curl -k -X GET "https://localhost:7065/assembly/C:%5CUsers%5CUSER%5Csource%5Crepos%5CDotNetAnalyzerPro%5Cbin%5CDebug%5Cnet7.0%5CDotNetAnalyzerPro.dll"
 
-curl -k -X GET "https://localhost:7065/assembly/C:%5CUsers%5CUSER%5Csource%5Crepos%5CSolutionIntrospectpr%5Cbin%5CDebug%5Cnet7.0%5CSolutionIntrospector.dll/namespaces"
+curl -k -X GET "https://localhost:7065/assembly/C:%5CUsers%5CUSER%5Csource%5Crepos%5CDotNetAnalyzerPro%5Cbin%5CDebug%5Cnet7.0%5CDotNetAnalyzerPro.dll/namespaces"
 
-curl -k -X GET "https://localhost:7065/class?className=SolutionController&namespaceName=SolutionIntrospector&assemblyPath=C:%5CUsers%5CUSER%5Csource%5Crepos%5CSolutionIntrospectpr%5Cbin%5CDebug%5Cnet7.0%5CSolutionIntrospector.dll"
+curl -k -X GET "https://localhost:7065/class?className=SolutionController&namespaceName=DotNetAnalyzerPro&assemblyPath=C:%5CUsers%5CUSER%5Csource%5Crepos%5CDotNetAnalyzerPro%5Cbin%5CDebug%5Cnet7.0%5CDotNetAnalyzerPro.dll"
 
-curl -k -X GET "https://localhost:7065/class/methods?className=SolutionController&namespaceName=SolutionIntrospector&assemblyPath=C:%5CUsers%5CUSER%5Csource%5Crepos%5CSolutionIntrospectpr%5Cbin%5CDebug%5Cnet7.0%5CSolutionIntrospector.dll"
+curl -k -X GET "https://localhost:7065/class/methods?className=SolutionController&namespaceName=DotNetAnalyzerPro&assemblyPath=C:%5CUsers%5CUSER%5Csource%5Crepos%5CDotNetAnalyzerPro%5Cbin%5CDebug%5Cnet7.0%5CDotNetAnalyzerPro.dll"
 
-curl -k -X GET "https://localhost:7065/method/syntaxtree?methodName=ListProjectsAsync&className=SolutionController&namespaceName=SolutionIntrospector&projectPath=SolutionIntrospector.csproj"
+curl -k -X GET "https://localhost:7065/method/syntaxtree?methodName=ListProjectsAsync&className=SolutionController&namespaceName=DotNetAnalyzerPro&projectPath=DotNetAnalyzerPro.csproj"
 
-curl -k -X GET "https://localhost:7065/class/fields?className=SolutionController&namespaceName=SolutionIntrospector&assemblyPath=C:%5CUsers%5CUSER%5Csource%5Crepos%5CSolutionIntrospectpr%5Cbin%5CDebug%5Cnet7.0%5CSolutionIntrospector.dll"
+curl -k -X GET "https://localhost:7065/class/fields?className=SolutionController&namespaceName=DotNetAnalyzerPro&assemblyPath=C:%5CUsers%5CUSER%5Csource%5Crepos%5CDotNetAnalyzerPro%5Cbin%5CDebug%5Cnet7.0%5CDotNetAnalyzerPro.dll"
 
-curl -k -X GET "https://localhost:7065/field?fieldName=_solutionIntrospector&className=SolutionController&namespaceName=SolutionIntrospector&assemblyPath=C:%5CUsers%5CUSER%5Csource%5Crepos%5CSolutionIntrospectpr%5Cbin%5CDebug%5Cnet7.0%5CSolutionIntrospector.dll"
+curl -k -X GET "https://localhost:7065/field?fieldName=_DotNetAnalyzerPro&className=SolutionController&namespaceName=DotNetAnalyzerPro&assemblyPath=C:%5CUsers%5CUSER%5Csource%5Crepos%5CDotNetAnalyzerPro%5Cbin%5CDebug%5Cnet7.0%5CDotNetAnalyzerPro.dll"

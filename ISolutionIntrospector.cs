@@ -6,9 +6,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Reflection;
 using NuGet.Packaging;
 
-namespace SolutionIntrospector
+namespace DotNetAnalyzerPro
 {
-    public interface ISolutionIntrospector
+    public interface IDotNetAnalyzerPro
     {
         Task<string> GetHomePageAsync();
         Task<Solution> GetSolutionInfoAsync(string solutionPath);

@@ -11,9 +11,9 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.MSBuild;
 
-namespace SolutionIntrospector
+namespace DotNetAnalyzerPro
 {
-    public class SolutionIntrospector : ISolutionIntrospector
+    public class DotNetAnalyzerPro : IDotNetAnalyzerPro
     {
         private readonly ConcurrentDictionary<string, Task<Solution>> solutionCache = new ConcurrentDictionary<string, Task<Solution>>();
         private readonly ConcurrentDictionary<string, Task<Project>> projectCache = new ConcurrentDictionary<string, Task<Project>>();
@@ -81,7 +81,27 @@ namespace SolutionIntrospector
 
         public async Task<Assembly> GetAssemblyInfoAsync(string assemblyPath)
         {
-            return await Task.Run(() => assemblyCache.GetOrAdd(assemblyPath, path => Assembly.LoadFrom(path)));
+            await semaphore.WaitAsync();
+            try
+            {
+                Assembly assembly = null;
+                // Normalize the file path for comparison
+                var normalizedPath = Path.GetFullPath(assemblyPath);
+
+                // Check inside the semaphore block to ensure the assembly hasn't been added by another thread
+                if (!assemblyCache.TryGetValue(normalizedPath, out assembly))
+                {
+                    // Load and add the assembly atomically to prevent race conditions
+                    assembly = await Task.Run(() => Assembly.LoadFrom(normalizedPath));
+                    assemblyCache.TryAdd(normalizedPath, assembly);
+                }
+
+                return assembly;
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         public async Task<IEnumerable<string>> ListNamespacesAsync(string assemblyPath)
@@ -99,9 +119,11 @@ namespace SolutionIntrospector
         {
             var assembly = await GetAssemblyInfoAsync(assemblyPath);
             return await Task.Run(() =>
-                assembly.GetTypes().Where(t => t.Namespace == namespaceName).ToList()
-            );
+                assembly.GetTypes()
+                .Where(t => t.Namespace == namespaceName && t.Assembly.Location == assembly.Location)
+                .ToList());
         }
+
 
         public async Task<Type> GetClassInfoAsync(string className, string namespaceName, string assemblyPath)
         {
@@ -112,20 +134,25 @@ namespace SolutionIntrospector
         public async Task<IEnumerable<MethodInfo>> ListMethodsAsync(string className, string namespaceName, string assemblyPath)
         {
             var type = await GetClassInfoAsync(className, namespaceName, assemblyPath);
-            return await Task.Run(() => new List<MethodInfo>(type.GetMethods()));
+            return type != null
+                ? await Task.Run(() => new List<MethodInfo>(type.GetMethods()))
+                : Enumerable.Empty<MethodInfo>();
         }
-
 
         public async Task<IEnumerable<FieldInfo>> ListFieldsAsync(string className, string namespaceName, string assemblyPath)
         {
             var type = await GetClassInfoAsync(className, namespaceName, assemblyPath);
-            return new List<FieldInfo>(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static));
+            return type != null
+                ? new List<FieldInfo>(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                : Enumerable.Empty<FieldInfo>();
         }
 
         public async Task<FieldInfo> GetFieldInfoAsync(string fieldName, string className, string namespaceName, string assemblyPath)
         {
             var type = await GetClassInfoAsync(className, namespaceName, assemblyPath);
-            return await Task.Run(() => type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static));
+            return type != null
+                ? await Task.Run(() => type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                : null;
         }
 
         public async Task<IEnumerable<MethodDeclarationSyntax>> GetMethodSyntaxTreeAsync(string methodName, string className, string namespaceName, string projectPath)
@@ -198,7 +225,7 @@ namespace SolutionIntrospector
 
         public async Task<string> GetHomePageAsync()
         {
-            return await Task.FromResult("SolutionIntrospector API V1");
+            return await Task.FromResult("DotNetAnalyzerPro API V1");
         }
 
         public async Task<IEnumerable<string>> ListSourceFilesAsync(string projectPath)

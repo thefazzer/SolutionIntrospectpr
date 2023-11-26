@@ -5,20 +5,20 @@ using Moq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Reflection;
-using SolutionIntrospector;  // Assuming the interface and implementation are in this namespace
+using DotNetAnalyzerPro;  // Assuming the interface and implementation are in this namespace
 
-namespace SolutionIntrospector.Tests
+namespace DotNetAnalyzerPro.Tests
 {
-    public class SolutionIntrospectorTests
+    public class DotNetAnalyzerProTests
     {
-        private readonly Mock<ISolutionIntrospector> mockIntrospector;
+        private readonly Mock<IDotNetAnalyzerPro> mockIntrospector;
         private readonly Mock<Solution> mockSolution;
         private readonly Mock<Project> mockProject;
         private readonly Mock<Assembly> mockAssembly;
 
-        public SolutionIntrospectorTests()
+        public DotNetAnalyzerProTests()
         {
-            mockIntrospector = new Mock<ISolutionIntrospector>();
+            mockIntrospector = new Mock<IDotNetAnalyzerPro>();
             mockSolution = new Mock<Solution>();
             mockProject = new Mock<Project>();
             mockAssembly = new Mock<Assembly>();

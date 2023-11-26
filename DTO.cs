@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using System.Reflection;
 
-namespace SolutionIntrospector.DTO
+namespace DotNetAnalyzerPro.DTO
 {
     public class SolutionDto
     {

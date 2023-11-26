@@ -1,14 +1,14 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "SolutionIntrospector API",
+    "title": "DotNetAnalyzerPro API",
     "version": "v1"
   },
   "paths": {
     "/solution/{solutionPath}": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {
@@ -37,7 +37,7 @@
     "/solution/{solutionPath}/projects": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {
@@ -69,7 +69,7 @@
     "/project/{projectPath}": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {
@@ -98,7 +98,7 @@
     "/project/{projectPath}/assemblies": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {
@@ -130,7 +130,7 @@
     "/assembly/{assemblyPath}": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {
@@ -159,7 +159,7 @@
     "/assembly/{assemblyPath}/namespaces": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {
@@ -191,7 +191,7 @@
     "/assembly/{assemblyPath}/classes": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {
@@ -231,7 +231,7 @@
     "/class/{className}": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {
@@ -276,7 +276,7 @@
     "/class/{className}/methods": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {
@@ -324,7 +324,7 @@
     "/method/{methodName}/syntaxtree": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {
@@ -380,7 +380,7 @@
     "/class/{className}/fields": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {
@@ -428,7 +428,7 @@
     "/field/{fieldName}": {
       "get": {
         "tags": [
-          "SolutionIntrospector"
+          "DotNetAnalyzerPro"
         ],
         "parameters": [
           {

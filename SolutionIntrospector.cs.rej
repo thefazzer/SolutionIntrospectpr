@@ -1,4 +1,4 @@
---- SolutionIntrospector.cs
+--- DotNetAnalyzerPro.cs
 +++ Modified.cs
 @@ -24,7 +24,7 @@
          private readonly ConcurrentDictionary<string, Assembly> assemblyCache = new ConcurrentDictionary<string, Assembly>();
