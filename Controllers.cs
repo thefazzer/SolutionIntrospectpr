@@ -27,7 +27,7 @@ namespace DotNetAnalyzerPro
         [HttpGet("GetSolutionInfo")]
         public async Task<ActionResult<SolutionDto>> GetSolutionInfoAsync(string solutionPath)
         {
-            if (!VerifyFullPath(ref solutionPath))
+            if (!VerifyFullPath(ref solutionPath, FileType.SLN)) // Assuming .sln for solutions
             {
                 return (ActionResult<SolutionDto>)StatusCode(500);
             }
@@ -58,10 +58,11 @@ namespace DotNetAnalyzerPro
         [HttpGet("ListProjects")]
         public async Task<ActionResult<List<ProjectDto>>> ListProjectsAsync(string solutionPath)
         {
-            if (!VerifyFullPath(ref solutionPath))
+            if (!VerifyFullPath(ref solutionPath, FileType.SLN)) // Assuming .sln for solutions
             {
-                return (ActionResult<List<ProjectDto>>)StatusCode(500);
+                return StatusCode(500);
             }
+
             try
             {
                 List<ProjectDto> projectDtos = (await _DotNetAnalyzerPro.ListProjectsAsync(solutionPath)).Select((Project p) => new ProjectDto
@@ -79,9 +80,9 @@ namespace DotNetAnalyzerPro
 
         public async Task<ActionResult<ProjectDto>> GetProjectInfoAsync(string projectPath)
         {
-            if (!VerifyFullPath(ref projectPath))
+            if (!VerifyFullPath(ref projectPath, FileType.CSPROJ)) // Assuming .csproj for projects
             {
-                return (ActionResult<ProjectDto>)StatusCode(500);
+                return StatusCode(500);
             }
             ProjectDto projectDto = MapToProjectDto(await _DotNetAnalyzerPro.GetProjectInfoAsync(projectPath));
             return (ActionResult<ProjectDto>)Ok(projectDto);
@@ -89,9 +90,9 @@ namespace DotNetAnalyzerPro
 
         public async Task<ActionResult<IEnumerable<AssemblyDto>>> ListAssembliesAsync(string projectPath)
         {
-            if (!VerifyFullPath(ref projectPath))
+            if (!VerifyFullPath(ref projectPath, FileType.CSPROJ)) // Assuming .csproj for projects
             {
-                return (ActionResult<IEnumerable<AssemblyDto>>)StatusCode(500);
+                return StatusCode(500);
             }
             IEnumerable<AssemblyDto> assemblyDtos = (await _DotNetAnalyzerPro.ListAssembliesAsync(projectPath)).Select((Assembly a) => MapToAssemblyDto(a));
             return (ActionResult<IEnumerable<AssemblyDto>>)Ok(assemblyDtos);
@@ -99,28 +100,29 @@ namespace DotNetAnalyzerPro
 
         public async Task<ActionResult<AssemblyDto>> GetAssemblyInfoAsync(string assemblyPath)
         {
-            if (!VerifyFullPath(ref assemblyPath))
+            if (!VerifyFullPath(ref assemblyPath, FileType.DLL)) // Assuming .dll for assemblies
             {
-                return (ActionResult<AssemblyDto>)StatusCode(500);
+                return StatusCode(500);
             }
+
             AssemblyDto assemblyDto = MapToAssemblyDto(await _DotNetAnalyzerPro.GetAssemblyInfoAsync(assemblyPath));
             return (ActionResult<AssemblyDto>)Ok(assemblyDto);
         }
 
         public async Task<ActionResult<IEnumerable<string>>> ListNamespacesAsync(string assemblyPath)
         {
-            if (!VerifyFullPath(ref assemblyPath))
+            if (!VerifyFullPath(ref assemblyPath, FileType.DLL)) // Assuming .dll for assemblies
             {
-                return (ActionResult<IEnumerable<string>>)StatusCode(500);
+                return StatusCode(500);
             }
             return (ActionResult<IEnumerable<string>>)Ok(await _DotNetAnalyzerPro.ListNamespacesAsync(assemblyPath));
         }
 
         public async Task<ActionResult<IEnumerable<TypeDto>>> ListClassesAsync(string namespaceName, string assemblyPath)
         {
-            if (!VerifyFullPath(ref assemblyPath))
+            if (!VerifyFullPath(ref assemblyPath, FileType.DLL)) // Assuming .dll for assemblies
             {
-                return (ActionResult<IEnumerable<TypeDto>>)StatusCode(500);
+                return StatusCode(500);
             }
             IEnumerable<TypeDto> classDtos = (await _DotNetAnalyzerPro.ListClassesAsync(namespaceName, assemblyPath)).Select((Type c) => MapToTypeDto(c));
             return (ActionResult<IEnumerable<TypeDto>>)Ok(classDtos);
@@ -128,9 +130,9 @@ namespace DotNetAnalyzerPro
 
         public async Task<ActionResult<TypeDto>> GetClassInfoAsync(string className, string namespaceName, string assemblyPath)
         {
-            if (!VerifyFullPath(ref assemblyPath))
+            if (!VerifyFullPath(ref assemblyPath, FileType.DLL)) // Assuming .dll for assemblies
             {
-                return (ActionResult<TypeDto>)StatusCode(500);
+                return StatusCode(500);
             }
             TypeDto classDto = MapToTypeDto(await _DotNetAnalyzerPro.GetClassInfoAsync(className, namespaceName, assemblyPath));
             return (ActionResult<TypeDto>)Ok(classDto);
@@ -138,9 +140,9 @@ namespace DotNetAnalyzerPro
 
         public async Task<ActionResult<IEnumerable<MethodInfoDto>>> ListMethodsAsync(string className, string namespaceName, string assemblyPath)
         {
-            if (!VerifyFullPath(ref assemblyPath))
+            if (!VerifyFullPath(ref assemblyPath, FileType.DLL)) // Assuming .dll for assemblies
             {
-                return (ActionResult<IEnumerable<MethodInfoDto>>)StatusCode(500);
+                return StatusCode(500);
             }
             IEnumerable<MethodInfoDto> methodDtos = (await _DotNetAnalyzerPro.ListMethodsAsync(className, namespaceName, assemblyPath)).Select((MethodInfo m) => MapToMethodInfoDto(m));
             return (ActionResult<IEnumerable<MethodInfoDto>>)Ok(methodDtos);
@@ -148,9 +150,9 @@ namespace DotNetAnalyzerPro
 
         public async Task<ActionResult<IEnumerable<MethodSyntaxTreeDto>>> GetMethodSyntaxTreeAsync(string methodName, string className, string namespaceName, string assemblyPath)
         {
-            if (!VerifyFullPath(ref assemblyPath))
+            if (!VerifyFullPath(ref assemblyPath, FileType.DLL)) // Assuming .dll for assemblies
             {
-                return (ActionResult<IEnumerable<MethodSyntaxTreeDto>>)StatusCode(500);
+                return StatusCode(500);
             }
             IEnumerable<MethodSyntaxTreeDto> methodSyntaxTreeDtos = (await _DotNetAnalyzerPro.GetMethodSyntaxTreeAsync(methodName, className, namespaceName, assemblyPath)).Select((MethodDeclarationSyntax m) => MapToMethodDeclarationSyntaxDto(m));
             return (ActionResult<IEnumerable<MethodSyntaxTreeDto>>)Ok(methodSyntaxTreeDtos);
@@ -158,9 +160,9 @@ namespace DotNetAnalyzerPro
 
         public async Task<ActionResult<IEnumerable<FieldInfoDto>>> ListFieldsAsync(string className, string namespaceName, string assemblyPath)
         {
-            if (!VerifyFullPath(ref assemblyPath))
+            if (!VerifyFullPath(ref assemblyPath, FileType.DLL)) // Assuming .dll for assemblies
             {
-                return (ActionResult<IEnumerable<FieldInfoDto>>)StatusCode(500);
+                return StatusCode(500);
             }
             IEnumerable<FieldInfoDto> fieldDtos = (await _DotNetAnalyzerPro.ListFieldsAsync(className, namespaceName, assemblyPath)).Select((FieldInfo f) => MapToFieldInfoDto(f));
             return (ActionResult<IEnumerable<FieldInfoDto>>)Ok(fieldDtos);
@@ -168,11 +170,11 @@ namespace DotNetAnalyzerPro
 
         public async Task<ActionResult<FieldInfoDto>> GetFieldInfoAsync(string fieldName, string className, string namespaceName, string assemblyPath)
         {
-            if (!VerifyFullPath(ref assemblyPath))
+            if (!VerifyFullPath(ref assemblyPath, FileType.DLL)) // Assuming .dll for assemblies
             {
-                return (ActionResult<FieldInfoDto>)StatusCode(500);
+                return StatusCode(500);
             }
-                
+
             FieldInfoDto fieldInfoDto = MapToFieldInfoDto(await _DotNetAnalyzerPro.GetFieldInfoAsync(fieldName, className, namespaceName, assemblyPath));
             return (ActionResult<FieldInfoDto>)Ok(fieldInfoDto);
         }
@@ -197,7 +199,7 @@ namespace DotNetAnalyzerPro
             };
         }
 
-        private bool VerifyFullPath(ref string filePath)
+        private bool VerifyFullPath(ref string filePath, FileType fileType)
         {
             string fileName = Path.GetFileName(filePath);
             if (string.IsNullOrEmpty(fileName))
@@ -205,15 +207,74 @@ namespace DotNetAnalyzerPro
                 filePath = null;
                 return false;
             }
-            if (!System.IO.File.Exists(fileName))
+
+            string fileExtension = GetExtensionFromFileType(fileType);
+            if (!fileName.EndsWith(fileExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (!System.IO.File.Exists(filePath))
             {
                 string path = "C:\\Users\\USER\\source";
-                string[] files = Directory.GetFiles(path, fileName, SearchOption.AllDirectories);
-                filePath = files.FirstOrDefault();
+                string searchPattern = "*" + fileExtension;
+                string[] files = Directory.GetFiles(path, searchPattern, SearchOption.AllDirectories);
+                filePath = files.FirstOrDefault(f => Path.GetFileName(f).Equals(fileName, StringComparison.OrdinalIgnoreCase));
                 return filePath != null;
             }
+
             return true;
         }
+
+        private string GetExtensionFromFileType(FileType fileType)
+        {
+            switch (fileType)
+            {
+                case FileType.DLL: return ".dll";
+                case FileType.CS: return ".cs";
+                case FileType.C: return ".c";
+                case FileType.OBJ: return ".obj";
+                case FileType.XML: return ".xml";
+                case FileType.JSON: return ".json";
+                case FileType.HTML: return ".html";
+                case FileType.CSS: return ".css";
+                case FileType.JS: return ".js";
+                case FileType.TS: return ".ts";
+                case FileType.MD: return ".md";
+                case FileType.TXT: return ".txt";
+                case FileType.SQL: return ".sql";
+                case FileType.BAT: return ".bat";
+                case FileType.SH: return ".sh";
+                case FileType.PNG: return ".png";
+                case FileType.JPG: return ".jpg";
+                case FileType.GIF: return ".gif";
+                case FileType.BMP: return ".bmp";
+                case FileType.PDF: return ".pdf";
+                case FileType.XLSX: return ".xlsx";
+                case FileType.DOCX: return ".docx";
+                case FileType.PPTX: return ".pptx";
+                case FileType.MP3: return ".mp3";
+                case FileType.MP4: return ".mp4";
+                case FileType.WAV: return ".wav";
+                case FileType.AVI: return ".avi";
+                case FileType.MPG: return ".mpg";
+                case FileType.ZIP: return ".zip";
+                case FileType.RAR: return ".rar";
+                case FileType.ISO: return ".iso";
+                case FileType.EXE: return ".exe";
+                case FileType.MSI: return ".msi";
+                case FileType.ASPX: return ".aspx";
+                case FileType.CSHTML: return ".cshtml";
+                case FileType.CONFIG: return ".config";
+                case FileType.LOG: return ".log";
+                case FileType.RESX: return ".resx";
+                case FileType.SLN: return ".sln";
+                case FileType.CSPROJ: return ".csproj";
+                default: return string.Empty;
+            }
+        }
+
+
 
         private TypeDto MapToTypeDto(Type type)
         {
@@ -277,5 +338,51 @@ namespace DotNetAnalyzerPro
                 ChildNodes = node.ChildNodes().Select(new Func<SyntaxNode, SyntaxNodeDto>(ConvertSyntaxNode)).ToList()
             };
         }
+
+        public enum FileType
+        {
+            DLL,    // .dll
+            CS,     // .cs
+            C,      // .c
+            OBJ,    // .obj
+            XML,    // .xml
+            JSON,   // .json
+            HTML,   // .html
+            CSS,    // .css
+            JS,     // .js
+            TS,     // .ts
+            MD,     // .md
+            TXT,    // .txt
+            SQL,    // .sql
+            BAT,    // .bat
+            SH,     // .sh
+            PNG,    // .png
+            JPG,    // .jpg
+            GIF,    // .gif
+            BMP,    // .bmp
+            PDF,    // .pdf
+            XLSX,   // .xlsx
+            DOCX,   // .docx
+            PPTX,   // .pptx
+            MP3,    // .mp3
+            MP4,    // .mp4
+            WAV,    // .wav
+            AVI,    // .avi
+            MPG,    // .mpg
+            ZIP,    // .zip
+            RAR,    // .rar
+            ISO,    // .iso
+            EXE,    // .exe
+            MSI,    // .msi
+            ASPX,   // .aspx
+            CSHTML, // .cshtml
+            CONFIG, // .config
+            LOG,    // .log
+            RESX,   // .resx
+            SLN,    // .sln
+            CSPROJ, // .csproj
+                    // Add more as needed
+        }
+
     }
 }
