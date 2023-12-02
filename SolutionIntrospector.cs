@@ -127,6 +127,11 @@ namespace DotNetAnalyzerPro
 
         public async Task<Type> GetClassInfoAsync(string className, string namespaceName, string assemblyPath)
         {
+            if (string.IsNullOrEmpty(className))
+            {
+                return (await ListClassesAsync(namespaceName, assemblyPath)).FirstOrDefault();
+            }
+
             var classes = await ListClassesAsync(namespaceName, assemblyPath);
             return classes.FirstOrDefault(t => t.Name == className);
         }
